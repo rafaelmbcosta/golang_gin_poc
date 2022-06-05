@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -26,14 +27,25 @@ func main() {
 
 	setupLogOutput()
 
-	server.Use(gin.Recovery(), middlewares.Logger(), middlewares.BasicAuth(), gindump.Dump())
+	server.Use(
+		gin.Recovery(),
+		middlewares.Logger(),
+		// middlewares.BasicAuth(),
+		gindump.Dump(),
+	)
 
 	server.GET("/videos", func(ctx *gin.Context) {
 		ctx.JSON(200, VideoController.FindAll())
 	})
 
 	server.POST("/videos", func(ctx *gin.Context) {
-		ctx.JSON(200, VideoController.Save(ctx))
+		err := VideoController.Save(ctx)
+
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{"message": "Video is Valid!"})
 	})
 
 	server.Run()
